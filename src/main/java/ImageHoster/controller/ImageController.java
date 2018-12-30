@@ -13,7 +13,8 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
-
+import ImageHoster.model.Comment;
+import ImageHoster.service.CommentService;
 import javax.servlet.http.HttpSession;
 import java.io.IOException;
 import java.util.*;
@@ -26,6 +27,9 @@ public class ImageController {
 
     @Autowired
     private TagService tagService;
+
+    @Autowired
+    private CommentService commentService;
 
     //This method displays all the images in the user home page after successful login
     @RequestMapping("images")
@@ -45,9 +49,15 @@ public class ImageController {
     //Also now you need to add the tags of an image in the Model type object
     //Here a list of tags is added in the Model type object
     //this list is then sent to 'images/image.html' file and the tags are displayed
-    @RequestMapping("/images/{title}")
-    public String showImage(@PathVariable("title") String title, Model model) {
-        Image image = imageService.getImageByTitle(title);
+    // replaced title with id attribute to fetch single record
+    // Comment service implelemted to get the comments by image id
+    @RequestMapping("/images/{id}")
+    public String showImage(@PathVariable("id") Integer id, Model model) {
+        Image image = imageService.getImageById(id);
+        List<Comment> comments = commentService.getCommentsById(id);
+        String success = "Success";
+        model.addAttribute("editSuccess", success);
+        model.addAttribute("comments",comments);
         model.addAttribute("image", image);
         model.addAttribute("tags", image.getTags());
         return "images/image";
@@ -96,16 +106,20 @@ public class ImageController {
     @RequestMapping(value = "/editImage")
     public String editImage(@RequestParam("imageId") Integer imageId, Model model,HttpSession session) {
         Image image = imageService.getImage(imageId);
+        String success = "Success";
         String error = "Only the owner of the image can edit the image";
         String tags = convertTagsToString(image.getTags());
         User user = (User) session.getAttribute("loggeduser");
+        model.addAttribute("image", image);
         model.addAttribute("image", image);
         model.addAttribute("tags", tags);
         if(user.getId() != image.getUser().getId()) {
             model.addAttribute("editError", error);
             return "images/image";
+        }else{
+            model.addAttribute("editSuccess", success);
+            return "images/edit";
         }
-        return "images/edit";
     }
 
     //This controller method is called when the request pattern is of type 'images/edit' and also the incoming request is of PUT type
@@ -139,7 +153,7 @@ public class ImageController {
         updatedImage.setDate(new Date());
 
         imageService.updateImage(updatedImage);
-        return "redirect:/images/" + updatedImage.getTitle();
+        return "redirect:/images/" + updatedImage.getId();
     }
 
 
@@ -159,9 +173,12 @@ public class ImageController {
         if(user.getId() != image.getUser().getId()) {
             model.addAttribute("deleteError", error);
             return "images/image";
+        }else{
+            String success = "Success";
+            model.addAttribute("editSuccess", success);
+            imageService.deleteImage(imageId);
+            return "redirect:/images";
         }
-        imageService.deleteImage(imageId);
-        return "redirect:/images";
     }
 
 
