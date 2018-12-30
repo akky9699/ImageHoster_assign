@@ -42,7 +42,7 @@ public class UserController {
     //validation added for password field to check strength(should contain atleast 1 alphabet, 1 number & 1 special character) of the password entered by the user at the time of registration.
     @RequestMapping(value = "users/registration", method = RequestMethod.POST)
     public String registerUser(User user,Model model) {
-        if(!(user.getPassword().matches("((?=.*\\d)(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%]).{3,20})"))){
+        if(!validatePassword(user.getPassword())){
             String error = "Password must contain atleast 1 alphabet, 1 number & 1 special character";
             model.addAttribute("User",user);
             model.addAttribute("passwordTypeError",error);
@@ -86,4 +86,29 @@ public class UserController {
         model.addAttribute("images", images);
         return "index";
     }
+
+ // used to validate password
+    public Boolean validatePassword(String password){
+        String specialChars = "~`!@#$%^&*()-_=+\\|[{]};:'\",<.>/?";
+        char currentCharacter;
+        boolean numberPresent = false;
+        boolean upperCasePresent = false;
+        boolean lowerCasePresent = false;
+        boolean specialCharacterPresent = false;
+
+        for (int i = 0; i < password.length(); i++) {
+            currentCharacter = password.charAt(i);
+            if (Character.isDigit(currentCharacter)) {
+                numberPresent = true;
+            } else if (Character.isLowerCase(currentCharacter)) {
+                lowerCasePresent = true;
+            } else if (specialChars.contains(String.valueOf(currentCharacter))) {
+                specialCharacterPresent = true;
+            }
+        }
+
+        return numberPresent && lowerCasePresent && specialCharacterPresent;
+    }
+
+
 }
